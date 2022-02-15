@@ -1,3 +1,9 @@
+/*
+Title: Pollock Code 2022
+Purpose: Code that runs on the 2022 bot
+Date Last Modified: 2022-02-15
+*/
+
 // Copyright (c) FIRST and other WPILib contributors.
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
@@ -5,6 +11,8 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -15,11 +23,24 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  * project.
  */
 public class Robot extends TimedRobot {
+
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
+  // initializing constants for use throughout the program
+  private static final int kLeftMotorChannel = 0;
+  private static final int kRightMotorChannel = 1;
+  private static final int kControllerChannel = 0;
+
+  // initializing Spark motor controllers for the drivetrain
+  private final PWMSparkMax m_leftMotor = new PWMSparkMax(kLeftMotorChannel);
+  private final PWMSparkMax m_rightMotor = new PWMSparkMax(kRightMotorChannel);
+  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
+
+  // driver controller(s)
+  private final XboxController m_driverController = new XboxController(kControllerChannel); 
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -29,6 +50,9 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+
+    // need to invert one side of the drivetrain, uncomment and edit as needed
+    // m_rightMotor.setInverted(true);
   }
 
   /**
@@ -78,7 +102,11 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+
+    m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+
+  }
 
   /** This function is called once when the robot is disabled. */
   @Override
