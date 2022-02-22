@@ -10,8 +10,11 @@ Date Last Modified: 2022-02-15
 
 package frc.robot;
 
+import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
+
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -35,8 +38,8 @@ public class Robot extends TimedRobot {
   private static final int kControllerChannel = 0;
 
   // initializing Spark motor controllers for the drivetrain
-  private final PWMSparkMax m_leftMotor = new PWMSparkMax(kLeftMotorChannel);
-  private final PWMSparkMax m_rightMotor = new PWMSparkMax(kRightMotorChannel);
+  private final WPI_TalonSRX m_leftMotor = new WPI_TalonSRX(kLeftMotorChannel); 
+  private final WPI_TalonSRX m_rightMotor = new WPI_TalonSRX(kRightMotorChannel);
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
 
   // driver controller(s)
