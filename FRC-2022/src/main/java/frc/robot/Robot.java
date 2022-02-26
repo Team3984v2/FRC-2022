@@ -12,10 +12,12 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -44,6 +46,10 @@ public class Robot extends TimedRobot {
 
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(kControllerChannel); 
+  // Solenoids, TODO
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1, 2);
+  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 3, 4);
+  private final DoubleSolenoid upSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 5, 6);
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -53,6 +59,9 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+    rightSolenoid.set(Value.kReverse);
+    leftSolenoid.set(Value.kReverse);
+    upSolenoid.set(Value.kReverse);
 
     // need to invert one side of the drivetrain, uncomment and edit as needed
     // m_rightMotor.setInverted(true);
