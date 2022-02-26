@@ -66,6 +66,7 @@ public class Robot extends TimedRobot {
     // need to invert one side of the drivetrain, uncomment and edit as needed
     // m_rightMotor.setInverted(true);
   }
+  //solenoids:::}}}
 
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
