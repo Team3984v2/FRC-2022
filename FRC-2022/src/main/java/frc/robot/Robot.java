@@ -48,11 +48,11 @@ public class Robot extends TimedRobot {
 
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(kControllerChannel); 
-  // Solenoids, TODO
+  // pneumatics Still need to get the ports.
   private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1, 2);
   private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 3, 4);
   private final DoubleSolenoid upSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 5, 6);
-  private final Compressor compressor= new Compressor(9, PneumaticsModuleType.CTREPCM);
+  private final Compressor comp= new Compressor(9, PneumaticsModuleType.CTREPCM);
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -62,6 +62,7 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+    // when robot is started, everything should be retracted.
     rightSolenoid.set(Value.kReverse);
     leftSolenoid.set(Value.kReverse);
     upSolenoid.set(Value.kReverse);
@@ -95,6 +96,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
+    // In the begining og autonomus, the intake system is deployed
     rightSolenoid.set(Value.kForward);
     leftSolenoid.set(Value.kForward);
     m_autoSelected = m_chooser.getSelected();
@@ -127,9 +129,15 @@ public class Robot extends TimedRobot {
 
     m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
     if (m_driverController.getRightBumperPressed()){
+      // go up if right bumper is presesed
       upSolenoid.set(Value.kForward);
     }
+    else if (m_driverController.getLeftBumper()){
+      // go down if left bumper is pressed.
+      upSolenoid.set(Value.kReverse);
+    }
     else{
+      // Stops the solenoid if the button is not pressed?
       upSolenoid.set(Value.kOff);
     }
 
