@@ -40,6 +40,7 @@ public class Robot extends TimedRobot {
   private static final int kLeftMotorChannel = 0;
   private static final int kRightMotorChannel = 1;
   private static final int kControllerChannel = 0;
+  //TODO - set channels for solenoids
   private static final int kRightSolenoidChannel1 = 1;
   private static final int kRightSolenoidChannel2 = 0;
   private static final int kLeftSolenoidChannel1 = 1;
