@@ -1,4 +1,4 @@
-//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
+
 /*
 Title: Pollock Code 2022
 Purpose: Code that runs on the 2022 bot
@@ -40,6 +40,10 @@ public class Robot extends TimedRobot {
   private static final int kLeftMotorChannel = 0;
   private static final int kRightMotorChannel = 1;
   private static final int kControllerChannel = 0;
+  private static final int kRightSolenoidChannel1 = 1;
+  private static final int kRightSolenoidChannel2 = 0;
+  private static final int kLeftSolenoidChannel1 = 1;
+  private static final int kLeftSolenoidChannel2  = 0;
 
   // initializing Spark motor controllers for the drivetrain
   private final WPI_TalonSRX m_leftMotor = new WPI_TalonSRX(kLeftMotorChannel); 
@@ -49,9 +53,8 @@ public class Robot extends TimedRobot {
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(kControllerChannel); 
   // pneumatics Still need to get the ports.
-  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 1, 2);
-  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 3, 4);
-  private final DoubleSolenoid upSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 5, 6);
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kRightSolenoidChannel1, kRightSolenoidChannel2);
+  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kLeftSolenoidChannel1, kLeftSolenoidChannel2);
   private final Compressor comp= new Compressor(9, PneumaticsModuleType.CTREPCM);
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -65,7 +68,6 @@ public class Robot extends TimedRobot {
     // when robot is started, everything should be retracted.
     rightSolenoid.set(Value.kReverse);
     leftSolenoid.set(Value.kReverse);
-    upSolenoid.set(Value.kReverse);
 
     // need to invert one side of the drivetrain, uncomment and edit as needed
     // m_rightMotor.setInverted(true);
@@ -129,16 +131,19 @@ public class Robot extends TimedRobot {
 
     m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
     if (m_driverController.getRightBumperPressed()){
-      // go up if right bumper is presesed
-      upSolenoid.set(Value.kForward);
+      // arm goes up if right bumper is presesed
+      rightSolenoid.set(Value.kForward);
+      leftSolenoid.set(Value.kForward);
     }
     else if (m_driverController.getLeftBumper()){
-      // go down if left bumper is pressed.
-      upSolenoid.set(Value.kReverse);
+      // arm goes down if left bumper is pressed.
+      rightSolenoid.set(Value.kReverse);
+      leftSolenoid.set(Value.kReverse);
     }
     else{
-      // Stops the solenoid if the button is not pressed?
-      upSolenoid.set(Value.kOff);
+      // Stops the solenoids if the button is not pressed?
+      rightSolenoid.set(Value.kOff);
+      leftSolenoid.set(Value.kOff);
     }
 
 
