@@ -20,6 +20,8 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -46,10 +48,14 @@ public class Robot extends TimedRobot {
   private static final int kLeftSolenoidChannel1 = 1;
   private static final int kLeftSolenoidChannel2  = 0;
 
+  private static final int kintakeMotorChannel
+
   // initializing Spark motor controllers for the drivetrain
   private final WPI_TalonSRX m_leftMotor = new WPI_TalonSRX(kLeftMotorChannel); 
   private final WPI_TalonSRX m_rightMotor = new WPI_TalonSRX(kRightMotorChannel);
   private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
+
+  private final Spark m_intakeMotor = new Spark(kintakeMotorChannel);
 
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(kControllerChannel); 
@@ -131,6 +137,7 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
 
     m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+    
     if (m_driverController.getRightBumperPressed()){
       // arm goes up if right bumper is presesed
       rightSolenoid.set(Value.kForward);
@@ -146,7 +153,17 @@ public class Robot extends TimedRobot {
       rightSolenoid.set(Value.kOff);
       leftSolenoid.set(Value.kOff);
     }
-
+    
+    if(m_driverController.getLeftBumper()){
+      m_intakeMotor.set(1);
+    }
+    else if (m_driverController.getRightBumper()) {
+      m_intakeMotor.set(-1);
+    }
+    else if(!m_driverController.getRightBumper() && !m_driverController.getLeftBumper()) {
+      m_intakeMotor.set(0);
+    }
+    
 
   }
 
