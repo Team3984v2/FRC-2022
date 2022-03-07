@@ -26,6 +26,7 @@ import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 
@@ -46,8 +47,11 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
   // initializing constants for use throughout the program
-  private static final int kLeftMotorChannel = 0;
-  private static final int kRightMotorChannel = 1;
+  private static final int kLeftRearMotorChannel = 0;
+  private static final int kRightRearMotorChannel = 1;
+  private static final int kLeftFrontMotorChannel = 2;
+  private static final int kRightFrontMotorChannel = 3;
+
   private static final int kControllerChannel = 0;
   //TODO - set channels for solenoids
   private static final int kRightSolenoidChannel1 = 1;
@@ -55,13 +59,20 @@ public class Robot extends TimedRobot {
   private static final int kLeftSolenoidChannel1 = 1;
   private static final int kLeftSolenoidChannel2  = 0;
 
-  private static final int kintakeMotorChannel
+  private static final int kintakeMotorChannel = 0;
+
+  // initializing Talon motor controllers for the drivetrain
+  private final WPI_TalonSRX m_leftRearMotor = new WPI_TalonSRX(kLeftRearMotorChannel); 
+  private final WPI_TalonSRX m_leftFrontMotor = new WPI_TalonSRX(kLeftFrontMotorChannel);
+  // private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
+  private final MotorControllerGroup leftGroup = new MotorControllerGroup(m_leftRearMotor, m_leftFrontMotor);
+
+  private final WPI_TalonSRX m_rightRearMotor = new WPI_TalonSRX(kRightRearMotorChannel); 
+  private final WPI_TalonSRX m_rightFrontMotor = new WPI_TalonSRX(kRightFrontMotorChannel);
+  private final MotorControllerGroup rightGroup = new MotorControllerGroup(m_rightRearMotor, m_rightFrontMotor);
+  private final DifferentialDrive m_motorGroup = new DifferentialDrive(leftGroup, rightGroup);
 
   // initializing Spark motor controllers for the drivetrain
-  private final WPI_TalonSRX m_leftMotor = new WPI_TalonSRX(kLeftMotorChannel); 
-  private final WPI_TalonSRX m_rightMotor = new WPI_TalonSRX(kRightMotorChannel);
-  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
-
   private final Spark m_intakeMotor = new Spark(kintakeMotorChannel);
 
   // driver controller(s)
@@ -70,6 +81,13 @@ public class Robot extends TimedRobot {
   private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kRightSolenoidChannel1, kRightSolenoidChannel2);
   private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kLeftSolenoidChannel1, kLeftSolenoidChannel2);
   private final Compressor comp= new Compressor(9, PneumaticsModuleType.CTREPCM);
+
+  //Drive Tank 
+  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+
+  private double kP = 1;
+  private double heading = gyro.getAngle();
+  private double error = heading - gyro.getAngle();
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -134,20 +152,8 @@ public class Robot extends TimedRobot {
     }*/
 
    //Should make the robot drive at the beginning of autonomous (but probably won't)
-    ADXRS450_Gyro gyro = new ADXRS450_Gyro();
 
-    double kP = 1;
-    double heading = gyro.getAngle();
-    double error = heading - gyro.getAngle();
-    m_robotDrive.tankDrive(0.5 + kP * error, 0.5 - kP * error);
-
-
-
-
-
-
-
-
+   m_motorGroup.tankDrive(0.5 + kP * error, 0.5 - kP * error);
   }
 
   /** This function is called once when teleop is enabled. */
@@ -159,7 +165,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+    m_motorGroup.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
     
     if (m_driverController.getRightBumperPressed()){
       // arm goes up if right bumper is presesed
