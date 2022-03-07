@@ -1,3 +1,4 @@
+
 /*
 Title: Pollock Code 2022
 Purpose: Code that runs on the 2022 bot
@@ -12,6 +13,10 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -37,6 +42,11 @@ public class Robot extends TimedRobot {
   private static final int kLeftMotorChannel = 0;
   private static final int kRightMotorChannel = 1;
   private static final int kControllerChannel = 0;
+  //TODO - set channels for solenoids
+  private static final int kRightSolenoidChannel1 = 1;
+  private static final int kRightSolenoidChannel2 = 0;
+  private static final int kLeftSolenoidChannel1 = 1;
+  private static final int kLeftSolenoidChannel2  = 0;
 
   private static final int kintakeMotorChannel
 
@@ -49,6 +59,10 @@ public class Robot extends TimedRobot {
 
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(kControllerChannel); 
+  // pneumatics Still need to get the ports.
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kRightSolenoidChannel1, kRightSolenoidChannel2);
+  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kLeftSolenoidChannel1, kLeftSolenoidChannel2);
+  private final Compressor comp= new Compressor(9, PneumaticsModuleType.CTREPCM);
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -58,10 +72,14 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+    // when robot is started, everything should be retracted.
+    rightSolenoid.set(Value.kReverse);
+    leftSolenoid.set(Value.kReverse);
 
     // need to invert one side of the drivetrain, uncomment and edit as needed
     // m_rightMotor.setInverted(true);
   }
+  //solenoids:::}}}
 
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
@@ -87,6 +105,9 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void autonomousInit() {
+    // In the begining og autonomus, the intake system is deployed
+    rightSolenoid.set(Value.kForward);
+    leftSolenoid.set(Value.kForward);
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
@@ -109,7 +130,6 @@ public class Robot extends TimedRobot {
   /** This function is called once when teleop is enabled. */
   @Override
   public void teleopInit() {
-
   }
 
   /** This function is called periodically during operator control. */
@@ -117,13 +137,28 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
 
     m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+    
+    if (m_driverController.getRightBumperPressed()){
+      // arm goes up if right bumper is presesed
+      rightSolenoid.set(Value.kForward);
+      leftSolenoid.set(Value.kForward);
+    }
+    else if (m_driverController.getLeftBumper()){
+      // arm goes down if left bumper is pressed.
+      rightSolenoid.set(Value.kReverse);
+      leftSolenoid.set(Value.kReverse);
+    }
+    else{
+      // Stops the solenoids if the button is not pressed?
+      rightSolenoid.set(Value.kOff);
+      leftSolenoid.set(Value.kOff);
+    }
+    
     if(m_driverController.getLeftBumper()){
       m_intakeMotor.set(1);
-
     }
     else if (m_driverController.getRightBumper()) {
       m_intakeMotor.set(-1);
-
     }
     else if(!m_driverController.getRightBumper() && !m_driverController.getLeftBumper()) {
       m_intakeMotor.set(0);
