@@ -13,6 +13,12 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+
+import edu.wpi.first.wpilibj.ADXRS450_Gyro; // Gyro may need to be changed
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
@@ -22,6 +28,7 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
+
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -116,7 +123,7 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-    switch (m_autoSelected) {
+   /* switch (m_autoSelected) {
       case kCustomAuto:
         // Put custom auto code here
         break;
@@ -124,7 +131,23 @@ public class Robot extends TimedRobot {
       default:
         // Put default auto code here
         break;
-    }
+    }*/
+
+   //Should make the robot drive at the beginning of autonomous (but probably won't)
+    ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+
+    double kP = 1;
+    double heading = gyro.getAngle();
+    double error = heading - gyro.getAngle();
+    m_robotDrive.tankDrive(0.5 + kP * error, 0.5 - kP * error);
+
+
+
+
+
+
+
+
   }
 
   /** This function is called once when teleop is enabled. */
