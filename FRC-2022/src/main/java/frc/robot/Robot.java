@@ -48,8 +48,8 @@ public class Robot extends TimedRobot {
   // initializing constants for use throughout the program
   private static final int kbottomLeftMotorChannel = 0;
   private static final int kbottomRightMotorChannel = 1;
-  private static final int ktopLeftMotorChannel = 0;
-  private static final int ktopRightMotorChannel = 1;
+  private static final int ktopLeftMotorChannel = 2;
+  private static final int ktopRightMotorChannel = 3;
   
   private static final int kControllerChannel = 0;
   //TODO - set channels for solenoids
