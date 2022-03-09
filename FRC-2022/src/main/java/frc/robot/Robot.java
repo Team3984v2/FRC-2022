@@ -11,24 +11,18 @@ Date Last Modified: 2022-02-15
 
 package frc.robot;
 
+import frc.robot.Constants;
+import frc.robot.Functions;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
-
 import edu.wpi.first.wpilibj.ADXRS450_Gyro; // Gyro may need to be changed
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+//import edu.wpi.first.wpilibj.DoubleSolenoid;
+//import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
-
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -62,8 +56,8 @@ public class Robot extends TimedRobot {
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(constants.kControllerChannel); 
   // pneumatics Still need to get the ports.
-  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
-  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
+  //private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
+  //private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
   private final Compressor comp = new Compressor(9, PneumaticsModuleType.CTREPCM);
 
 
@@ -83,8 +77,8 @@ public class Robot extends TimedRobot {
 
 
     // when robot is started, everything should be retracted.
-    rightSolenoid.set(Value.kReverse);
-    leftSolenoid.set(Value.kReverse);
+    //rightSolenoid.set(Value.kReverse);
+    //leftSolenoid.set(Value.kReverse);
 
 
   }
@@ -115,8 +109,8 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     // In the begining og autonomus, the intake system is deployed
-    rightSolenoid.set(Value.kForward);
-    leftSolenoid.set(Value.kForward);
+    //rightSolenoid.set(Value.kForward);
+    //leftSolenoid.set(Value.kForward);
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
@@ -168,7 +162,7 @@ public class Robot extends TimedRobot {
     else{
       m_bottomrightMotor.set(0);
     }
-    if (m_driverController.getLeftTriggerAxis() > .5){
+    if (m_driverController.getAButton()){
       m_bottomleftMotor.set(1);
     }
     else{

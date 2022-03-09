@@ -25,9 +25,9 @@ public class Functions {
     public void setInitTalons(WPI_TalonSRX frontLefTalonSRX, WPI_TalonSRX frontRightTalonSRX, WPI_TalonSRX rearLeftTalonSRX, WPI_TalonSRX rearRightTalonSRX ){
     
         //frontLefTalonSRX.setInverted(true);
-        //frontRightTalonSRX.setInverted(true);
+        frontRightTalonSRX.setInverted(true);
         //rearLeftTalonSRX.setInverted(true);
-        //rearRightTalonSRX.setInverted(true);
+        rearRightTalonSRX.setInverted(true);
     
     
     }
