@@ -40,41 +40,33 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends TimedRobot {
 
+  private static Functions functions = new Functions();
+  private static Constants constants = new Constants();
+
+
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  // initializing constants for use throughout the program
-  private static final int kbottomLeftMotorChannel = 0;
-  private static final int kbottomRightMotorChannel = 1;
-  private static final int ktopLeftMotorChannel = 2;
-  private static final int ktopRightMotorChannel = 3;
-  
-  private static final int kControllerChannel = 0;
-  //TODO - set channels for solenoids
-  private static final int kRightSolenoidChannel1 = 1;
-  private static final int kRightSolenoidChannel2 = 0;
-  private static final int kLeftSolenoidChannel1 = 1;
-  private static final int kLeftSolenoidChannel2  = 0;
-
-  private static final int kintakeMotorChannel = 0;
 
   // initializing Spark motor controllers for the drivetrain
-  private final WPI_TalonSRX m_bottomleftMotor = new WPI_TalonSRX(kbottomLeftMotorChannel); 
-  private final WPI_TalonSRX m_bottomrightMotor = new WPI_TalonSRX(kbottomRightMotorChannel);
-  private final WPI_TalonSRX m_topleftMotor = new WPI_TalonSRX(ktopLeftMotorChannel);
-  private final WPI_TalonSRX m_toprightMotor = new WPI_TalonSRX(ktopRightMotorChannel);
+  private final WPI_TalonSRX m_bottomleftMotor = new WPI_TalonSRX(constants.kbottomLeftMotorChannel); 
+  private final WPI_TalonSRX m_bottomrightMotor = new WPI_TalonSRX(constants.kbottomRightMotorChannel);
+  private final WPI_TalonSRX m_topleftMotor = new WPI_TalonSRX(constants.ktopLeftMotorChannel);
+  private final WPI_TalonSRX m_toprightMotor = new WPI_TalonSRX(constants.ktopRightMotorChannel);
   //private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
 
-  private final Spark m_intakeMotor = new Spark(kintakeMotorChannel);
+  private final Spark m_intakeMotor = new Spark(constants.kintakeMotorChannel);
 
   // driver controller(s)
-  private final XboxController m_driverController = new XboxController(kControllerChannel); 
+  private final XboxController m_driverController = new XboxController(constants.kControllerChannel); 
   // pneumatics Still need to get the ports.
-  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kRightSolenoidChannel1, kRightSolenoidChannel2);
-  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kLeftSolenoidChannel1, kLeftSolenoidChannel2);
-  private final Compressor comp= new Compressor(9, PneumaticsModuleType.CTREPCM);
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
+  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
+  private final Compressor comp = new Compressor(9, PneumaticsModuleType.CTREPCM);
+
+
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -84,14 +76,19 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
+
+
+    //Setting up motors. Main thing: inverts neccessary motors.
+    functions.setInitTalons(m_topleftMotor, m_toprightMotor, m_bottomleftMotor, m_bottomrightMotor);
+
+
     // when robot is started, everything should be retracted.
     rightSolenoid.set(Value.kReverse);
     leftSolenoid.set(Value.kReverse);
 
-    // need to invert one side of the drivetrain, uncomment and edit as needed
-    // m_rightMotor.setInverted(true);
+
   }
-  //solenoids:::}}}
+
 
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
