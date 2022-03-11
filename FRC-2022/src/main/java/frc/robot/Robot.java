@@ -10,12 +10,19 @@ Date Last Modified: 2022-02-15
 
 package frc.robot;
 
+
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.wpilibj.ADXRS450_Gyro; // Gyro may need to be changed
+import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -27,23 +34,44 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends TimedRobot {
 
+  public Constants constants = new Constants();
+  public Functions functions = new Functions();
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  // initializing constants for use throughout the program
-  private static final int kLeftMotorChannel = 0;
-  private static final int kRightMotorChannel = 1;
-  private static final int kControllerChannel = 0;
+
+
+  // initializing Talon motor controllers for the drivetrain
+  private final WPI_TalonSRX m_leftRearMotor = new WPI_TalonSRX(constants.kleftRearMotorChannel); 
+  private final WPI_TalonSRX m_leftFrontMotor = new WPI_TalonSRX(constants.kleftFrontMotorChannel);
+  // private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
+  private final MotorControllerGroup leftGroup = new MotorControllerGroup(m_leftRearMotor, m_leftFrontMotor);
+
+  private final WPI_TalonSRX m_rightRearMotor = new WPI_TalonSRX(constants.krightFrontMotorChannel); 
+  private final WPI_TalonSRX m_rightFrontMotor = new WPI_TalonSRX(constants.krightRearMotorChannel);
+  private final MotorControllerGroup rightGroup = new MotorControllerGroup(m_rightRearMotor, m_rightFrontMotor);
+  private final DifferentialDrive m_motorGroup = new DifferentialDrive(leftGroup, rightGroup);
 
   // initializing Spark motor controllers for the drivetrain
-  private final WPI_TalonSRX m_leftMotor = new WPI_TalonSRX(kLeftMotorChannel); 
-  private final WPI_TalonSRX m_rightMotor = new WPI_TalonSRX(kRightMotorChannel);
-  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
-
+  private final Spark m_intakeMotor = new Spark(constants.kintakeMotorChannel);
+  
   // driver controller(s)
-  private final XboxController m_driverController = new XboxController(kControllerChannel); 
+  private final XboxController m_driverController = new XboxController(constants.kControllerChannel); 
+  // pneumatics Still need to get the ports.
+
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
+  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
+  private final Compressor comp = new Compressor(9, PneumaticsModuleType.CTREPCM);
+
+  //Drive Tank 
+  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+
+  private double kP = 1;
+  private double heading = gyro.getAngle();
+  private double error = heading - gyro.getAngle();
+  
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -54,8 +82,16 @@ public class Robot extends TimedRobot {
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
-    // need to invert one side of the drivetrain, uncomment and edit as needed
-    // m_rightMotor.setInverted(true);
+
+    //Setting up motors. Main thing: inverts neccessary motors.
+    functions.setInitTalons(m_leftFrontMotor, m_rightFrontMotor, m_leftRearMotor, m_rightRearMotor);
+
+
+    // when robot is started, everything should be retracted.
+    //rightSolenoid.set(Value.kReverse);
+    //leftSolenoid.set(Value.kReverse);
+
+
   }
 
   /**
@@ -107,7 +143,34 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+    m_motorGroup.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+    
+    if (m_driverController.getRightBumperPressed()){
+      // arm goes up if right bumper is presesed
+      rightSolenoid.set(Value.kForward);
+      leftSolenoid.set(Value.kForward);
+    }
+    else if (m_driverController.getLeftBumper()){
+      // arm goes down if left bumper is pressed.
+      rightSolenoid.set(Value.kReverse);
+      leftSolenoid.set(Value.kReverse);
+    }
+    else{
+      // Stops the solenoids if the button is not pressed?
+      rightSolenoid.set(Value.kOff);
+      leftSolenoid.set(Value.kOff);
+    }
+    
+    if(m_driverController.getLeftBumper()){
+      m_intakeMotor.set(1);
+    }
+    else if (m_driverController.getRightBumper()) {
+      m_intakeMotor.set(-1);
+    }
+    else if(!m_driverController.getRightBumper() && !m_driverController.getLeftBumper()) {
+      m_intakeMotor.set(0);
+    }
+    
 
   }
 
