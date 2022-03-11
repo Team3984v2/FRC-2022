@@ -22,6 +22,9 @@ import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.drive.DifferentialDrive;
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -44,23 +47,38 @@ public class Robot extends TimedRobot {
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
 
+=======
+
+  // initializing Talon motor controllers for the drivetrain
+  private final WPI_TalonSRX m_bottomLeftMotor = new WPI_TalonSRX(constants.kbottomLeftMotorChannel); 
+  private final WPI_TalonSRX m_topLeftMotor = new WPI_TalonSRX(constants.ktopLeftMotorChannel);
+  // private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
+  private final MotorControllerGroup leftGroup = new MotorControllerGroup(m_leftRearMotor, m_leftFrontMotor);
+
+  private final WPI_TalonSRX m_bottomRightMotor = new WPI_TalonSRX(constants.kbottomRightMotorChannel); 
+  private final WPI_TalonSRX m_topRightMotor = new WPI_TalonSRX(constants.ktopRightMotorChannel);
+  private final MotorControllerGroup rightGroup = new MotorControllerGroup(m_rightRearMotor, m_rightFrontMotor);
+  private final DifferentialDrive m_motorGroup = new DifferentialDrive(leftGroup, rightGroup);
+
   // initializing Spark motor controllers for the drivetrain
-  private final WPI_TalonSRX m_bottomleftMotor = new WPI_TalonSRX(constants.kbottomLeftMotorChannel); 
-  private final WPI_TalonSRX m_bottomrightMotor = new WPI_TalonSRX(constants.kbottomRightMotorChannel);
-  private final WPI_TalonSRX m_topleftMotor = new WPI_TalonSRX(constants.ktopLeftMotorChannel);
-  private final WPI_TalonSRX m_toprightMotor = new WPI_TalonSRX(constants.ktopRightMotorChannel);
-  //private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor);
-
-  private final Spark m_intakeMotor = new Spark(constants.kintakeMotorChannel);
-
+  private final Spark m_intakeMotor = new Spark(kintakeMotorChannel);
+  
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(constants.kControllerChannel); 
   // pneumatics Still need to get the ports.
-  //private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
-  //private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
-  private final Compressor comp = new Compressor(9, PneumaticsModuleType.CTREPCM);
 
+=======
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
+  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
+  private final Compressor comp= new Compressor(9, PneumaticsModuleType.CTREPCM);
 
+  //Drive Tank 
+  private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+
+  private double kP = 1;
+  private double heading = gyro.getAngle();
+  private double error = heading - gyro.getAngle();
+  
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -130,20 +148,9 @@ public class Robot extends TimedRobot {
     }*/
 
    //Should make the robot drive at the beginning of autonomous (but probably won't)
-    ADXRS450_Gyro gyro = new ADXRS450_Gyro();
-
-    double kP = 1;
-    double heading = gyro.getAngle();
-    double error = heading - gyro.getAngle();
-    //m_robotDrive.tankDrive(0.5 + kP * error, 0.5 - kP * error);
 
 
-
-
-
-
-
-
+   m_motorGroup.tankDrive(0.5 + kP * error, 0.5 - kP * error);
   }
 
   /** This function is called once when teleop is enabled. */
@@ -155,32 +162,9 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-   //m_robotDrive.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
-    if (m_driverController.getRightTriggerAxis() > .5){
-      m_bottomrightMotor.set(1);
-    }
-    else{
-      m_bottomrightMotor.set(0);
-    }
-    if (m_driverController.getAButton()){
-      m_bottomleftMotor.set(1);
-    }
-    else{
-      m_bottomleftMotor.set(0);
-    }
-    if (m_driverController.getRightBumper()){
-      m_toprightMotor.set(1);
-    }
-    else{
-      m_toprightMotor.set(0);
-    }
-    if (m_driverController.getLeftBumper()){
-      m_topleftMotor.set(1);
-    }
-    else{
-      m_topleftMotor.set(0);
-    }
-   /* if (m_driverController.getRightBumperPressed()){
+    m_motorGroup.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+    
+    if (m_driverController.getRightBumperPressed()){
       // arm goes up if right bumper is presesed
       rightSolenoid.set(Value.kForward);
       leftSolenoid.set(Value.kForward);
