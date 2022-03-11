@@ -27,7 +27,7 @@ public class Constants{
   public final int kLeftSolenoidChannel2  = 0;
 
   //Spark channels
-  public final int kintakeMotorChannel = 0;
+  public final int kintakeMotorChannel = 8;
 
 
 
