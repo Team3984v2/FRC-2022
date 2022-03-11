@@ -11,17 +11,14 @@ Date Last Modified: 2022-02-15
 
 package frc.robot;
 
+import frc.robot.Constants;
+import frc.robot.Functions;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
-
 import edu.wpi.first.wpilibj.ADXRS450_Gyro; // Gyro may need to be changed
-import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-
 import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+//import edu.wpi.first.wpilibj.DoubleSolenoid;
+//import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
@@ -29,7 +26,6 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
-
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -41,45 +37,39 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
  */
 public class Robot extends TimedRobot {
 
+  private static Functions functions = new Functions();
+  private static Constants constants = new Constants();
+
+
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
-  // initializing constants for use throughout the program
-  private static final int kLeftRearMotorChannel = 0;
-  private static final int kRightRearMotorChannel = 1;
-  private static final int kLeftFrontMotorChannel = 2;
-  private static final int kRightFrontMotorChannel = 3;
 
-  private static final int kControllerChannel = 0;
-  //TODO - set channels for solenoids
-  private static final int kRightSolenoidChannel1 = 1;
-  private static final int kRightSolenoidChannel2 = 0;
-  private static final int kLeftSolenoidChannel1 = 1;
-  private static final int kLeftSolenoidChannel2  = 0;
-
-  private static final int kintakeMotorChannel = 0;
+=======
 
   // initializing Talon motor controllers for the drivetrain
-  private final WPI_TalonSRX m_leftRearMotor = new WPI_TalonSRX(kLeftRearMotorChannel); 
-  private final WPI_TalonSRX m_leftFrontMotor = new WPI_TalonSRX(kLeftFrontMotorChannel);
+  private final WPI_TalonSRX m_bottomLeftMotor = new WPI_TalonSRX(constants.kbottomLeftMotorChannel); 
+  private final WPI_TalonSRX m_topLeftMotor = new WPI_TalonSRX(constants.ktopLeftMotorChannel);
   // private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
   private final MotorControllerGroup leftGroup = new MotorControllerGroup(m_leftRearMotor, m_leftFrontMotor);
 
-  private final WPI_TalonSRX m_rightRearMotor = new WPI_TalonSRX(kRightRearMotorChannel); 
-  private final WPI_TalonSRX m_rightFrontMotor = new WPI_TalonSRX(kRightFrontMotorChannel);
+  private final WPI_TalonSRX m_bottomRightMotor = new WPI_TalonSRX(constants.kbottomRightMotorChannel); 
+  private final WPI_TalonSRX m_topRightMotor = new WPI_TalonSRX(constants.ktopRightMotorChannel);
   private final MotorControllerGroup rightGroup = new MotorControllerGroup(m_rightRearMotor, m_rightFrontMotor);
   private final DifferentialDrive m_motorGroup = new DifferentialDrive(leftGroup, rightGroup);
 
   // initializing Spark motor controllers for the drivetrain
   private final Spark m_intakeMotor = new Spark(kintakeMotorChannel);
-
+  
   // driver controller(s)
-  private final XboxController m_driverController = new XboxController(kControllerChannel); 
+  private final XboxController m_driverController = new XboxController(constants.kControllerChannel); 
   // pneumatics Still need to get the ports.
-  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kRightSolenoidChannel1, kRightSolenoidChannel2);
-  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, kLeftSolenoidChannel1, kLeftSolenoidChannel2);
+
+=======
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
+  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
   private final Compressor comp= new Compressor(9, PneumaticsModuleType.CTREPCM);
 
   //Drive Tank 
@@ -88,6 +78,7 @@ public class Robot extends TimedRobot {
   private double kP = 1;
   private double heading = gyro.getAngle();
   private double error = heading - gyro.getAngle();
+  
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -97,14 +88,19 @@ public class Robot extends TimedRobot {
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
-    // when robot is started, everything should be retracted.
-    rightSolenoid.set(Value.kReverse);
-    leftSolenoid.set(Value.kReverse);
 
-    // need to invert one side of the drivetrain, uncomment and edit as needed
-    // m_rightMotor.setInverted(true);
+
+    //Setting up motors. Main thing: inverts neccessary motors.
+    functions.setInitTalons(m_topleftMotor, m_toprightMotor, m_bottomleftMotor, m_bottomrightMotor);
+
+
+    // when robot is started, everything should be retracted.
+    //rightSolenoid.set(Value.kReverse);
+    //leftSolenoid.set(Value.kReverse);
+
+
   }
-  //solenoids:::}}}
+
 
   /**
    * This function is called every robot packet, no matter the mode. Use this for items like
@@ -131,8 +127,8 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     // In the begining og autonomus, the intake system is deployed
-    rightSolenoid.set(Value.kForward);
-    leftSolenoid.set(Value.kForward);
+    //rightSolenoid.set(Value.kForward);
+    //leftSolenoid.set(Value.kForward);
     m_autoSelected = m_chooser.getSelected();
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
@@ -152,6 +148,7 @@ public class Robot extends TimedRobot {
     }*/
 
    //Should make the robot drive at the beginning of autonomous (but probably won't)
+
 
    m_motorGroup.tankDrive(0.5 + kP * error, 0.5 - kP * error);
   }
@@ -191,7 +188,7 @@ public class Robot extends TimedRobot {
     }
     else if(!m_driverController.getRightBumper() && !m_driverController.getLeftBumper()) {
       m_intakeMotor.set(0);
-    }
+    }*/
     
 
   }
