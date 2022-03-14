@@ -36,6 +36,8 @@ public class Robot extends TimedRobot {
 
   public Constants constants = new Constants();
   public Functions functions = new Functions();
+
+
   private static final String kDefaultAuto = "Default";
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
@@ -46,27 +48,35 @@ public class Robot extends TimedRobot {
   // initializing Talon motor controllers for the drivetrain
   private final WPI_TalonSRX m_leftRearMotor = new WPI_TalonSRX(constants.kleftRearMotorChannel); 
   private final WPI_TalonSRX m_leftFrontMotor = new WPI_TalonSRX(constants.kleftFrontMotorChannel);
-  // private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_leftMotor, m_rightMotor); 
-  private final MotorControllerGroup leftGroup = new MotorControllerGroup(m_leftRearMotor, m_leftFrontMotor);
-
   private final WPI_TalonSRX m_rightRearMotor = new WPI_TalonSRX(constants.krightFrontMotorChannel); 
   private final WPI_TalonSRX m_rightFrontMotor = new WPI_TalonSRX(constants.krightRearMotorChannel);
+  
+  //Motor Controller Groups
+  private final MotorControllerGroup leftGroup = new MotorControllerGroup(m_leftRearMotor, m_leftFrontMotor);
   private final MotorControllerGroup rightGroup = new MotorControllerGroup(m_rightRearMotor, m_rightFrontMotor);
+  
+  //Differential Drive
   private final DifferentialDrive m_motorGroup = new DifferentialDrive(leftGroup, rightGroup);
 
   // initializing Spark motor controllers for the drivetrain
-  private final Spark m_intakeMotor = new Spark(constants.kintakeMotorChannel);
+  private final Spark m_intakeMotor = new Spark(constants.kPrimaryIntakeChannel);
+  private final Spark m_secondaryIntake = new Spark(constants.kSecondaryIntakeChannel);
+  private final Spark m_shootMotor = new Spark(constants.kShootingChannel);
+  private final Spark m_winch = new Spark(constants.kWinchChannel);
   
   // driver controller(s)
   private final XboxController m_driverController = new XboxController(constants.kControllerChannel); 
+  
   // pneumatics Still need to get the ports.
-
+  private final Compressor comp = new Compressor(9, PneumaticsModuleType.CTREPCM);
   private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
   private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
-  private final Compressor comp = new Compressor(9, PneumaticsModuleType.CTREPCM);
+  private final DoubleSolenoid latchSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.klatchSolenoidChannel1, constants.klatchSolenoidChannel2);
 
-  //Drive Tank 
+  //Drive Setting up Gyro 
   private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
+
+  private int shoot_index = 0;
 
   private double kP = 1;
   private double heading = gyro.getAngle();
@@ -85,11 +95,6 @@ public class Robot extends TimedRobot {
 
     //Setting up motors. Main thing: inverts neccessary motors.
     functions.setInitTalons(m_leftFrontMotor, m_rightFrontMotor, m_leftRearMotor, m_rightRearMotor);
-
-
-    // when robot is started, everything should be retracted.
-    //rightSolenoid.set(Value.kReverse);
-    //leftSolenoid.set(Value.kReverse);
 
 
   }
@@ -143,33 +148,72 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
+    //Driving
     m_motorGroup.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
     
-    if (m_driverController.getRightBumperPressed()){
+    //Arm Solenoids
+    if (m_driverController.getPOV() == 90){
       // arm goes up if right bumper is presesed
       rightSolenoid.set(Value.kForward);
       leftSolenoid.set(Value.kForward);
     }
-    else if (m_driverController.getLeftBumper()){
+    else if (m_driverController.getPOV() == 270){
       // arm goes down if left bumper is pressed.
       rightSolenoid.set(Value.kReverse);
       leftSolenoid.set(Value.kReverse);
     }
-    else{
-      // Stops the solenoids if the button is not pressed?
-      rightSolenoid.set(Value.kOff);
-      leftSolenoid.set(Value.kOff);
+
+    //Latch Solenoid
+    if (m_driverController.getBackButton()){
+      latchSolenoid.set(Value.kReverse);
+    }else if (m_driverController.getStartButton()){
+      latchSolenoid.set(Value.kForward);
     }
-    
-    if(m_driverController.getLeftBumper()){
+
+    //Winch Motor
+    if (m_driverController.getPOV() == 0){
+      m_winch.set(.25);
+    }else if (m_driverController.getPOV() == 180){
+      m_winch.set(-.25);
+    }else{
+      m_winch.stopMotor();
+    }
+
+
+    //Intake System
+    if(m_driverController.getAButton()){
       m_intakeMotor.set(1);
+      m_secondaryIntake.set(1);
     }
-    else if (m_driverController.getRightBumper()) {
+    else if (m_driverController.getBButton()) {
       m_intakeMotor.set(-1);
+      m_secondaryIntake.set(-1);
     }
-    else if(!m_driverController.getRightBumper() && !m_driverController.getLeftBumper()) {
+    else if(!m_driverController.getAButton() && !m_driverController.getBButton()) {
       m_intakeMotor.set(0);
+      m_secondaryIntake.set(0);
     }
+
+    //Shoot Motor
+
+    switch (shoot_index) {
+      case 0:
+        if(m_driverController.getYButtonPressed()){
+          m_shootMotor.set(1);
+          shoot_index = 1;
+        }
+        break;
+    
+      case 1:
+        if(m_driverController.getYButtonPressed()){
+          m_shootMotor.set(0);
+          shoot_index = 0;
+        }
+        break;
+    }
+
+
+    SmartDashboard.putNumber("Shoot Index", shoot_index);
     
 
   }
@@ -188,5 +232,23 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during test mode. */
   @Override
-  public void testPeriodic() {}
+  public void testPeriodic() {
+
+    //Test to see orientation each motor NOTE: Robot init still works 
+    if (m_driverController.getLeftBumper()){
+      m_leftRearMotor.set(1);
+    }
+    if (m_driverController.getRightBumper()){
+      m_rightFrontMotor.set(1);
+    }
+    if (m_driverController.getLeftTriggerAxis() > .5){
+      m_leftFrontMotor.set(1);
+    }
+    if (m_driverController.getRightTriggerAxis() > .5){
+      m_rightRearMotor.set(1);
+    }
+
+
+
+  }
 }

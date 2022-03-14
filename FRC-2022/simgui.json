@@ -1,0 +1,75 @@
+{
+  "HALProvider": {
+    "Other Devices": {
+      "Compressor[0]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Compressor[9]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon SRX[0]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon SRX[2]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon SRX[3]": {
+        "header": {
+          "open": true
+        }
+      },
+      "Talon SRX[3]/Analog In": {
+        "header": {
+          "open": true
+        }
+      }
+    },
+    "PWM Outputs": {
+      "window": {
+        "visible": true
+      }
+    },
+    "RoboRIO": {
+      "window": {
+        "visible": true
+      }
+    },
+    "Solenoids": {
+      "window": {
+        "visible": true
+      }
+    }
+  },
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/LiveWindow/Ungrouped/ADXRS450_Gyro[0]": "Gyro",
+      "/LiveWindow/Ungrouped/DifferentialDrive[1]": "DifferentialDrive",
+      "/SmartDashboard/Auto choices": "String Chooser"
+    }
+  },
+  "NetworkTables": {
+    "LiveWindow": {
+      ".status": {
+        "open": true
+      },
+      "Ungrouped": {
+        "Compressor[9]": {
+          "open": true
+        },
+        "open": true
+      }
+    },
+    "SmartDashboard": {
+      "open": true
+    }
+  }
+}
