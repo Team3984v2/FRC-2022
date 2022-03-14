@@ -13,10 +13,12 @@ def main():
 
    width = camera['width']
    height = camera['height']
-
+   video_mode = CameraServer.video_mode(2)
    cs = CameraServer.getInstance()
    cs.enableLogging()
    cs.startAutomaticCapture(dev=0)
+   
+   
 
    input_stream = cs.getVideo()
    output_stream = cs.putVideo('Processed', width, height)

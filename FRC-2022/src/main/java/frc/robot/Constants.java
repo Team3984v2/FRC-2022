@@ -29,8 +29,8 @@ public class Constants{
 
   //Spark channels
   public final int kPrimaryIntakeChannel = 8;    //intake motors on the arm
-  public final int kSecondaryIntakeChannel = 0;  // Lower Large Wheel intake motor attached to robot body
-  public final int kShootingChannel = 1;         // Top Large wheel for shooting attached to the robot body
-  public final int kWinchChannel = 2;
+  public final int kSecondaryIntakeChannel = 9;  // Lower Large Wheel intake motor attached to robot body
+  public final int kShootingChannel = 6;         // Top Large wheel for shooting attached to the robot body
+  public final int kWinchChannel = 7;
   
 }
