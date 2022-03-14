@@ -68,9 +68,9 @@ public class Robot extends TimedRobot {
   private final XboxController m_driverController = new XboxController(constants.kControllerChannel); 
   
   // pneumatics Still need to get the ports.
-  private final Compressor comp = new Compressor(9, PneumaticsModuleType.CTREPCM);
+  private final Compressor comp = new Compressor(4, PneumaticsModuleType.CTREPCM);
   private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
-  private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
+  //private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
   private final DoubleSolenoid latchSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.klatchSolenoidChannel1, constants.klatchSolenoidChannel2);
 
   //Drive Setting up Gyro 
@@ -95,6 +95,7 @@ public class Robot extends TimedRobot {
 
     //Setting up motors. Main thing: inverts neccessary motors.
     functions.setInitTalons(m_leftFrontMotor, m_rightFrontMotor, m_leftRearMotor, m_rightRearMotor);
+    shoot_index = 0;
 
 
   }
@@ -155,18 +156,19 @@ public class Robot extends TimedRobot {
     if (m_driverController.getPOV() == 90){
       // arm goes up if right bumper is presesed
       rightSolenoid.set(Value.kForward);
-      leftSolenoid.set(Value.kForward);
+      //leftSolenoid.set(Value.kForward);
     }
-    else if (m_driverController.getPOV() == 270){
+    if (m_driverController.getPOV() == 270){
       // arm goes down if left bumper is pressed.
       rightSolenoid.set(Value.kReverse);
-      leftSolenoid.set(Value.kReverse);
+      //leftSolenoid.set(Value.kReverse);
     }
 
     //Latch Solenoid
     if (m_driverController.getBackButton()){
       latchSolenoid.set(Value.kReverse);
-    }else if (m_driverController.getStartButton()){
+    }
+    if (m_driverController.getStartButton()){
       latchSolenoid.set(Value.kForward);
     }
 
@@ -185,11 +187,11 @@ public class Robot extends TimedRobot {
       m_intakeMotor.set(1);
       m_secondaryIntake.set(1);
     }
-    else if (m_driverController.getBButton()) {
+    if (m_driverController.getBButton()) {
       m_intakeMotor.set(-1);
       m_secondaryIntake.set(-1);
     }
-    else if(!m_driverController.getAButton() && !m_driverController.getBButton()) {
+    if(!m_driverController.getAButton() && !m_driverController.getBButton()) {
       m_intakeMotor.set(0);
       m_secondaryIntake.set(0);
     }
@@ -237,15 +239,77 @@ public class Robot extends TimedRobot {
     //Test to see orientation each motor NOTE: Robot init still works 
     if (m_driverController.getLeftBumper()){
       m_leftRearMotor.set(1);
+    }else{
+      m_leftRearMotor.set(0);
     }
     if (m_driverController.getRightBumper()){
       m_rightFrontMotor.set(1);
+    }else{
+      m_rightFrontMotor.set(0);
     }
     if (m_driverController.getLeftTriggerAxis() > .5){
       m_leftFrontMotor.set(1);
+    }else{
+      m_leftFrontMotor.set(0);
     }
     if (m_driverController.getRightTriggerAxis() > .5){
       m_rightRearMotor.set(1);
+    }else{
+      m_rightRearMotor.set(0);
+    }
+    
+    if(m_driverController.getAButton()){
+      m_intakeMotor.set(1);
+      m_secondaryIntake.set(1);
+    }
+    else if (m_driverController.getBButton()) {
+      m_intakeMotor.set(-1);
+      m_secondaryIntake.set(-1);
+    }
+    else if(!m_driverController.getAButton() && !m_driverController.getBButton()) {
+      m_intakeMotor.set(0);
+      m_secondaryIntake.set(0);
+    }
+
+    switch (shoot_index) {
+      case 0:
+        if(m_driverController.getYButtonPressed()){
+          m_shootMotor.set(1);
+          shoot_index = 1;
+        }
+        break;
+    
+      case 1:
+        if(m_driverController.getYButtonPressed()){
+          m_shootMotor.set(0);
+          shoot_index = 0;
+        }
+        break;
+    }
+
+    if (m_driverController.getPOV() == 0){
+      m_winch.set(.25);
+    }else if (m_driverController.getPOV() == 180){
+      m_winch.set(-.25);
+    }else{
+      m_winch.stopMotor();
+    }
+
+    if (m_driverController.getPOV() == 90){
+      // arm goes up if right bumper is presesed
+      rightSolenoid.set(Value.kForward);
+      //leftSolenoid.set(Value.kForward);
+    }
+    else if (m_driverController.getPOV() == 270){
+      // arm goes down if left bumper is pressed.
+      rightSolenoid.set(Value.kReverse);
+      //leftSolenoid.set(Value.kReverse);
+    }
+
+    if (m_driverController.getBackButton()){
+      latchSolenoid.set(Value.kReverse);
+    }else if (m_driverController.getStartButton()){
+      latchSolenoid.set(Value.kForward);
     }
 
 

@@ -20,12 +20,12 @@ public class Constants{
   public final int krightFrontMotorChannel = 3;
 
   //channels for solenoids
-  public final int kRightSolenoidChannel1 = 0;
-  public final int kRightSolenoidChannel2 = 1;
-  public final int kLeftSolenoidChannel1 = 2;
-  public final int kLeftSolenoidChannel2  = 3;
-  public final int klatchSolenoidChannel1 = 4;    //Solenoid to latch onto the lift
-  public final int klatchSolenoidChannel2 = 5;
+  public final int kRightSolenoidChannel2 = 4;
+  public final int kRightSolenoidChannel1 = 5;
+  //public final int kLeftSolenoidChannel1 = 2;
+  //public final int kLeftSolenoidChannel2  = 3;
+  public final int klatchSolenoidChannel2 = 0;    //Solenoid to latch onto the lift
+  public final int klatchSolenoidChannel1 = 1;
 
   //Spark channels
   public final int kPrimaryIntakeChannel = 8;    //intake motors on the arm
