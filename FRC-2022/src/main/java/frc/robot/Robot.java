@@ -13,10 +13,18 @@ package frc.robot;
 
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
+import edu.wpi.first.cscore.MjpegServer;
+import edu.wpi.first.cscore.UsbCamera;
+import edu.wpi.first.cscore.VideoMode.PixelFormat;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro; // Gyro may need to be changed
 import edu.wpi.first.wpilibj.Compressor;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
@@ -36,6 +44,8 @@ public class Robot extends TimedRobot {
 
   public Constants constants = new Constants();
   public Functions functions = new Functions();
+
+
 
 
   private static final String kDefaultAuto = "Default";
@@ -69,18 +79,21 @@ public class Robot extends TimedRobot {
   
   // pneumatics Still need to get the ports.
   private final Compressor comp = new Compressor(4, PneumaticsModuleType.CTREPCM);
-  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
+
+  private final DoubleSolenoid rightSolenoid = new DoubleSolenoid(4,PneumaticsModuleType.CTREPCM, constants.kRightSolenoidChannel1, constants.kRightSolenoidChannel2);
   //private final DoubleSolenoid leftSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.kLeftSolenoidChannel1, constants.kLeftSolenoidChannel2);
-  private final DoubleSolenoid latchSolenoid = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, constants.klatchSolenoidChannel1, constants.klatchSolenoidChannel2);
+  private final DoubleSolenoid latchSolenoid = new DoubleSolenoid(4,PneumaticsModuleType.CTREPCM, constants.klatchSolenoidChannel1, constants.klatchSolenoidChannel2);
 
   //Drive Setting up Gyro 
   private ADXRS450_Gyro gyro = new ADXRS450_Gyro();
 
   private int shoot_index = 0;
+  private int rumble_index = 0;
 
   private double kP = 1;
   private double heading = gyro.getAngle();
   private double error = heading - gyro.getAngle();
+  private DigitalInput toplimitSwitch = new DigitalInput(0);
   
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -88,6 +101,21 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+
+    // Creates UsbCamera and MjpegServer [1] and connects them
+    UsbCamera usbCamera = new UsbCamera("USB Camera 0", 0);
+    MjpegServer mjpegServer1 = new MjpegServer("serve_USB Camera 0", 1181);
+    mjpegServer1.setSource(usbCamera);
+
+    // Creates the CvSink and connects it to the UsbCamera
+    CvSink cvSink = new CvSink("opencv_USB Camera 0");
+    cvSink.setSource(usbCamera);
+
+    // Creates the CvSource and MjpegServer [2] and connects them
+    CvSource outputStream = new CvSource("Blur", PixelFormat.kYUYV, 640, 480, 30);
+    MjpegServer mjpegServer2 = new MjpegServer("serve_Blur", 1182);
+    mjpegServer2.setSource(outputStream);
+
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
@@ -174,9 +202,9 @@ public class Robot extends TimedRobot {
 
     //Winch Motor
     if (m_driverController.getPOV() == 0){
-      m_winch.set(.25);
+      m_winch.set(.5);
     }else if (m_driverController.getPOV() == 180){
-      m_winch.set(-.25);
+      m_winch.set(-1);
     }else{
       m_winch.stopMotor();
     }
@@ -214,8 +242,23 @@ public class Robot extends TimedRobot {
         break;
     }
 
+    if (toplimitSwitch.get()) {
+        // We are going up and top limit is tripped so stop
+        SmartDashboard.putString("Latch Secure", "True");
+          if (rumble_index <= 20){
+            m_driverController.setRumble(RumbleType.kRightRumble, 1);
+            m_driverController.setRumble(RumbleType.kLeftRumble, 1);
+            rumble_index++;
 
-    SmartDashboard.putNumber("Shoot Index", shoot_index);
+          }
+    } else {
+        // We are going up but top limit is not tripped so go at commanded speed
+        SmartDashboard.putString("Latch Secure", "False");
+        rumble_index = 0;
+    }
+
+
+    
     
 
   }
