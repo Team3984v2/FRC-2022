@@ -14,6 +14,7 @@ package frc.robot;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
 import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CameraServerCvJNI;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.MjpegServer;
@@ -115,11 +116,14 @@ public class Robot extends TimedRobot {
     CvSource outputStream = new CvSource("Blur", PixelFormat.kYUYV, 640, 480, 30);
     MjpegServer mjpegServer2 = new MjpegServer("serve_Blur", 1182);
     mjpegServer2.setSource(outputStream);
+    
+    SmartDashboard.putBoolean("Is Latched", true);
 
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
     m_chooser.addOption("My Auto", kCustomAuto);
     SmartDashboard.putData("Auto choices", m_chooser);
 
+    SmartDashboard.putNumber("speed", .75);
 
     //Setting up motors. Main thing: inverts neccessary motors.
     functions.setInitTalons(m_leftFrontMotor, m_rightFrontMotor, m_leftRearMotor, m_rightRearMotor);
@@ -178,7 +182,7 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
 
     //Driving
-    m_motorGroup.arcadeDrive(-m_driverController.getLeftY(), m_driverController.getRightX());
+    m_motorGroup.arcadeDrive(-(m_driverController.getLeftY()*m_driverController.getLeftY()*m_driverController.getLeftY()), (m_driverController.getRightX()*m_driverController.getRightX()*m_driverController.getRightX()));
     
     //Arm Solenoids
     if (m_driverController.getPOV() == 90){
@@ -195,14 +199,16 @@ public class Robot extends TimedRobot {
     //Latch Solenoid
     if (m_driverController.getBackButton()){
       latchSolenoid.set(Value.kReverse);
+      SmartDashboard.putBoolean("Is Latched", false);
     }
     if (m_driverController.getStartButton()){
       latchSolenoid.set(Value.kForward);
+      SmartDashboard.putBoolean("Is Latched", true);
     }
 
     //Winch Motor
     if (m_driverController.getPOV() == 0){
-      m_winch.set(.5);
+      m_winch.set(1);
     }else if (m_driverController.getPOV() == 180){
       m_winch.set(-1);
     }else{
@@ -213,20 +219,39 @@ public class Robot extends TimedRobot {
     //Intake System
     if(m_driverController.getAButton()){
       m_intakeMotor.set(1);
-      m_secondaryIntake.set(1);
     }
     if (m_driverController.getBButton()) {
       m_intakeMotor.set(-1);
-      m_secondaryIntake.set(-1);
     }
     if(!m_driverController.getAButton() && !m_driverController.getBButton()) {
       m_intakeMotor.set(0);
-      m_secondaryIntake.set(0);
     }
 
-    //Shoot Motor
+    //Secondary intake Motor
 
-    switch (shoot_index) {
+    if (m_driverController.getRightBumper()){
+      m_secondaryIntake.set(1);
+    }
+    if (m_driverController.getLeftBumper()){
+      m_secondaryIntake.set(-1);
+    }
+    if(!m_driverController.getLeftBumper() && !m_driverController.getRightBumper() || m_driverController.getLeftBumper() && m_driverController.getRightBumper()) {
+      m_secondaryIntake.set(0);
+    }
+    if (m_driverController.getRightTriggerAxis() != 0 && m_driverController.getLeftTriggerAxis() == 0){
+      m_shootMotor.set((m_driverController.getRightTriggerAxis())*0.33);
+    }
+    if (m_driverController.getLeftTriggerAxis() != 0 && m_driverController.getRightTriggerAxis() == 0){
+      m_shootMotor.set((m_driverController.getLeftTriggerAxis())*(SmartDashboard.getNumber("speed",.1)));
+    }
+    if (m_driverController.getLeftTriggerAxis() != 0 && m_driverController.getRightTriggerAxis() != 0){
+      m_shootMotor.set(-((m_driverController.getLeftTriggerAxis()+m_driverController.getRightTriggerAxis())/2)*0.25);
+    }if(m_driverController.getLeftTriggerAxis() == 0 && m_driverController.getRightTriggerAxis() == 0){
+      m_shootMotor.set(0);
+    }
+
+
+   /* switch (shoot_index) {
       case 0:
         if(m_driverController.getYButtonPressed()){
           m_shootMotor.set(1);
@@ -240,20 +265,26 @@ public class Robot extends TimedRobot {
           shoot_index = 0;
         }
         break;
-    }
+    }*/
 
     if (toplimitSwitch.get()) {
         // We are going up and top limit is tripped so stop
-        SmartDashboard.putString("Latch Secure", "True");
-          if (rumble_index <= 20){
-            m_driverController.setRumble(RumbleType.kRightRumble, 1);
-            m_driverController.setRumble(RumbleType.kLeftRumble, 1);
+        SmartDashboard.putBoolean("Latch Ready", false);
+        //if (latchSolenoid.get() != Value.kForward && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
+         // latchSolenoid.set(DoubleSolenoid.Value.kForward);
+        //}
+
+          /*if (rumble_index <= 20){
+
             rumble_index++;
 
-          }
+          }*/
     } else {
         // We are going up but top limit is not tripped so go at commanded speed
-        SmartDashboard.putString("Latch Secure", "False");
+        //if (latchSolenoid.get() != Value.kReverse  && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
+        //  latchSolenoid.set(DoubleSolenoid.Value.kReverse);
+        //}
+        SmartDashboard.putBoolean("Latch Ready", true);
         rumble_index = 0;
     }
 
