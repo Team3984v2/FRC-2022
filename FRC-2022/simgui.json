@@ -43,6 +43,16 @@
       }
     },
     "Solenoids": {
+      "0": {
+        "header": {
+          "open": true
+        }
+      },
+      "4": {
+        "header": {
+          "open": true
+        }
+      },
       "window": {
         "visible": true
       }
@@ -53,6 +63,7 @@
       "/FMSInfo": "FMSInfo",
       "/LiveWindow/Ungrouped/ADXRS450_Gyro[0]": "Gyro",
       "/LiveWindow/Ungrouped/DifferentialDrive[1]": "DifferentialDrive",
+      "/LiveWindow/Ungrouped/DigitalInput[0]": "Digital Input",
       "/SmartDashboard/Auto choices": "String Chooser"
     }
   },

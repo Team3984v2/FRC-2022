@@ -34,6 +34,7 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.Timer;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -65,7 +66,7 @@ public class Robot extends TimedRobot {
   //Motor Controller Groups
   private final MotorControllerGroup leftGroup = new MotorControllerGroup(m_leftRearMotor, m_leftFrontMotor);
   private final MotorControllerGroup rightGroup = new MotorControllerGroup(m_rightRearMotor, m_rightFrontMotor);
-  
+  private final MotorControllerGroup drivetrain = new MotorControllerGroup(leftGroup, rightGroup);
   //Differential Drive
   private final DifferentialDrive m_motorGroup = new DifferentialDrive(leftGroup, rightGroup);
 
@@ -95,7 +96,7 @@ public class Robot extends TimedRobot {
   private double heading = gyro.getAngle();
   private double error = heading - gyro.getAngle();
   private DigitalInput toplimitSwitch = new DigitalInput(0);
-  
+  private final Timer m_timer = new Timer();
   /**
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
@@ -116,7 +117,7 @@ public class Robot extends TimedRobot {
     CvSource outputStream = new CvSource("Blur", PixelFormat.kYUYV, 640, 480, 30);
     MjpegServer mjpegServer2 = new MjpegServer("serve_Blur", 1182);
     mjpegServer2.setSource(outputStream);
-    
+
     SmartDashboard.putBoolean("Is Latched", true);
 
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
@@ -155,6 +156,8 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousInit() {
     m_autoSelected = m_chooser.getSelected();
+    m_timer.reset();
+    
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
   }
@@ -164,10 +167,43 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
     switch (m_autoSelected) {
       case kCustomAuto:
+        //autonomus?
+        // starting against goal
+        // set speed to 33% and shoot into low goal
+        // move back and try to grab another ball.
+        m_intakeMotor.set(1);
+        m_shootMotor.set(0.33);
+        // robot shoots the preloaded ball into the low goal as it will start up against the goal.
+        m_timer.start();
+        //No encoder so I got the rpm of the motor and used a timer
+        if (m_timer.get() < 0.12){
+          drivetrain.set(-0.5);
+          // robot moving backwards
+        }
+        if (m_timer.get() > 0.13 && m_timer.get() < 0.20){
+          rightGroup.set(0.5);
+          // robot turning torwards ball
+        }
+        if (m_timer.get() > 0.21 && m_timer.get() < 0.24){
+          // robot intakes the ball
+          drivetrain.set(0.75);
+        }
+        if (m_timer.get() > 0.24 && m_timer.get() < 0.31){
+          // ribot turns torwards the goal
+          leftGroup.set(0.5);
+        }
+        if (m_timer.get() > 0.31){
+          // shooting at a distance of about 153 inches
+          m_shootMotor.set(0.66); // about 87 % of the power if it was at 175 inches away. 
+        }
+        //leftGroup.set(1);
+
         // Put custom auto code here
         break;
       case kDefaultAuto:
       default:
+      m_intakeMotor.set(1);
+        m_shootMotor.set(0.33);
         // Put default auto code here
         break;
     }

@@ -9,7 +9,7 @@ import numpy as np
 import time
 
 def main():
-   with open('/boot/frc.json') as f:
+   with open('/boot/config.json') as f:
       config = json.load(f)
    camera = config['cameras'][0]
 
