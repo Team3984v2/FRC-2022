@@ -11,30 +11,33 @@ Date Last Modified: 2022-02-15
 package frc.robot;
 
 
+import java.util.FormatterClosedException;
+
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 
-import edu.wpi.first.cameraserver.CameraServer;
-import edu.wpi.first.cscore.CameraServerCvJNI;
 import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.MjpegServer;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.cscore.VideoMode.PixelFormat;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.ADXRS450_Gyro; // Gyro may need to be changed
 import edu.wpi.first.wpilibj.Compressor;
 import edu.wpi.first.wpilibj.DigitalInput;
+import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.Timer;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -46,6 +49,8 @@ public class Robot extends TimedRobot {
 
   public Constants constants = new Constants();
   public Functions functions = new Functions();
+
+
 
 
 
@@ -91,11 +96,19 @@ public class Robot extends TimedRobot {
 
   private int shoot_index = 0;
   private int rumble_index = 0;
+  private boolean initred;
+  private boolean initblue;
 
   private double kP = 1;
   private double heading = gyro.getAngle();
   private double error = heading - gyro.getAngle();
+
+
   private DigitalInput toplimitSwitch = new DigitalInput(0);
+  private DigitalOutput red = new DigitalOutput(2);
+  private DigitalOutput blue = new DigitalOutput(3);
+  private DigitalOutput green = new DigitalOutput(4);
+  
   private final Timer m_timer = new Timer();
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -118,6 +131,11 @@ public class Robot extends TimedRobot {
     MjpegServer mjpegServer2 = new MjpegServer("serve_Blur", 1182);
     mjpegServer2.setSource(outputStream);
 
+    //Networktables
+    NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    NetworkTable fieldtTable = inst.getTable("FMSInfo");
+
+
     SmartDashboard.putBoolean("Is Latched", true);
 
     m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
@@ -129,6 +147,27 @@ public class Robot extends TimedRobot {
     //Setting up motors. Main thing: inverts neccessary motors.
     functions.setInitTalons(m_leftFrontMotor, m_rightFrontMotor, m_leftRearMotor, m_rightRearMotor);
     shoot_index = 0;
+
+    //Initializing RGB
+    red.set(false);
+    blue.set(false);
+    green.set(false);
+
+    SmartDashboard.putBoolean("red:", false);
+    SmartDashboard.putBoolean("blue:", false);
+    SmartDashboard.putBoolean("green:", false);
+
+     if (fieldtTable.getEntry("IsRedAlliance").getBoolean(false)){
+       red.set(true);
+       initred = true;
+       SmartDashboard.putBoolean("red:", initred);
+     }else{
+       blue.set(true);
+       initblue = true;
+       SmartDashboard.putBoolean("blue:", initblue);
+     }
+
+
 
 
   }
@@ -287,28 +326,13 @@ public class Robot extends TimedRobot {
     }
 
 
-   /* switch (shoot_index) {
-      case 0:
-        if(m_driverController.getYButtonPressed()){
-          m_shootMotor.set(1);
-          shoot_index = 1;
-        }
-        break;
-    
-      case 1:
-        if(m_driverController.getYButtonPressed()){
-          m_shootMotor.set(0);
-          shoot_index = 0;
-        }
-        break;
-    }*/
 
     if (toplimitSwitch.get()) {
         // We are going up and top limit is tripped so stop
         SmartDashboard.putBoolean("Latch Ready", false);
-        //if (latchSolenoid.get() != Value.kForward && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
-         // latchSolenoid.set(DoubleSolenoid.Value.kForward);
-        //}
+        if (latchSolenoid.get() != Value.kForward && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
+          latchSolenoid.set(DoubleSolenoid.Value.kForward);
+        }
 
           /*if (rumble_index <= 20){
 
@@ -323,6 +347,11 @@ public class Robot extends TimedRobot {
         SmartDashboard.putBoolean("Latch Ready", true);
         rumble_index = 0;
     }
+
+
+    red.set(SmartDashboard.getBoolean("red:", initred));
+    blue.set(SmartDashboard.getBoolean("blue:", initblue));
+    green.set(SmartDashboard.getBoolean("green:", false));
 
 
     
