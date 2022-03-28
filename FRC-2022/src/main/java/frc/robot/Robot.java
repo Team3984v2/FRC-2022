@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -105,9 +106,9 @@ public class Robot extends TimedRobot {
 
 
   private DigitalInput toplimitSwitch = new DigitalInput(0);
-  private DigitalOutput red = new DigitalOutput(2);
-  private DigitalOutput blue = new DigitalOutput(3);
-  private DigitalOutput green = new DigitalOutput(4);
+  private DigitalOutput red = new DigitalOutput(1);
+  private DigitalOutput blue = new DigitalOutput(2);
+  private DigitalOutput green = new DigitalOutput(3);
   
   private final Timer m_timer = new Timer();
   /**
@@ -118,18 +119,6 @@ public class Robot extends TimedRobot {
   public void robotInit() {
 
     // Creates UsbCamera and MjpegServer [1] and connects them
-    UsbCamera usbCamera = new UsbCamera("USB Camera 0", 0);
-    MjpegServer mjpegServer1 = new MjpegServer("serve_USB Camera 0", 1181);
-    mjpegServer1.setSource(usbCamera);
-
-    // Creates the CvSink and connects it to the UsbCamera
-    CvSink cvSink = new CvSink("opencv_USB Camera 0");
-    cvSink.setSource(usbCamera);
-
-    // Creates the CvSource and MjpegServer [2] and connects them
-    CvSource outputStream = new CvSource("Blur", PixelFormat.kYUYV, 640, 480, 30);
-    MjpegServer mjpegServer2 = new MjpegServer("serve_Blur", 1182);
-    mjpegServer2.setSource(outputStream);
 
     //Networktables
     NetworkTableInstance inst = NetworkTableInstance.getDefault();
@@ -199,6 +188,22 @@ public class Robot extends TimedRobot {
     
     // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
     System.out.println("Auto selected: " + m_autoSelected);
+
+    SmartDashboard.putBoolean("red:", false);
+    SmartDashboard.putBoolean("blue:", false);
+    SmartDashboard.putBoolean("green:", false);
+    if (DriverStation.getAlliance() == Alliance.Red){
+      red.set(true);
+      initred = true;
+      SmartDashboard.putBoolean("red:", initred);
+    }else{
+      blue.set(true);
+      initblue = true;
+      SmartDashboard.putBoolean("blue:", initblue);
+    }
+    m_timer.start();
+    
+
   }
 
   /** This function is called periodically during autonomous. */
@@ -210,10 +215,9 @@ public class Robot extends TimedRobot {
         // starting against goal
         // set speed to 33% and shoot into low goal
         // move back and try to grab another ball.
-        m_intakeMotor.set(1);
+        m_secondaryIntake.set(1);
         m_shootMotor.set(0.33);
-        // robot shoots the preloaded ball into the low goal as it will start up against the goal.
-        m_timer.start();
+        // robot shoots the preloaded ball into the low goal as it will start up against the goal
         //No encoder so I got the rpm of the motor and used a timer
         if (m_timer.get() < 0.12){
           drivetrain.set(-0.5);
@@ -241,8 +245,41 @@ public class Robot extends TimedRobot {
         break;
       case kDefaultAuto:
       default:
-      m_intakeMotor.set(1);
+      /*
+      if (m_timer.get() < 1){
         m_shootMotor.set(0.33);
+      }else{
+        m_secondaryIntake.set(1);
+        m_shootMotor.set(0.33);
+      }
+      */
+
+      m_secondaryIntake.set(1);
+        m_shootMotor.set(0.33);
+        // robot shoots the preloaded ball into the low goal as it will start up against the goal
+        //No encoder so I got the rpm of the motor and used a timer
+        if (m_timer.get() < 0.12){
+          drivetrain.set(-0.5);
+          // robot moving backwards
+        }
+        if (m_timer.get() > 0.13 && m_timer.get() < 0.20){
+          rightGroup.set(0.5);
+          // robot turning torwards ball
+        }
+        if (m_timer.get() > 0.21 && m_timer.get() < 0.24){
+          // robot intakes the ball
+          drivetrain.set(0.75);
+        }
+        if (m_timer.get() > 0.24 && m_timer.get() < 0.31){
+          // ribot turns torwards the goal
+          leftGroup.set(0.5);
+        }
+        if (m_timer.get() > 0.31){
+          // shooting at a distance of about 153 inches
+          m_secondaryIntake.set(1);
+          m_shootMotor.set(0.66); // about 87 % of the power if it was at 175 inches away. 
+        }
+      
         // Put default auto code here
         break;
     }
@@ -330,10 +367,12 @@ public class Robot extends TimedRobot {
     if (toplimitSwitch.get()) {
         // We are going up and top limit is tripped so stop
         SmartDashboard.putBoolean("Latch Ready", false);
-        if (latchSolenoid.get() != Value.kForward && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
-          latchSolenoid.set(DoubleSolenoid.Value.kForward);
+        /*
+        if (latchSolenoid.get() != Value.kReverse  && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
+          latchSolenoid.set(DoubleSolenoid.Value.kReverse);
         }
-
+        */
+        
           /*if (rumble_index <= 20){
 
             rumble_index++;
@@ -341,9 +380,11 @@ public class Robot extends TimedRobot {
           }*/
     } else {
         // We are going up but top limit is not tripped so go at commanded speed
-        //if (latchSolenoid.get() != Value.kReverse  && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
-        //  latchSolenoid.set(DoubleSolenoid.Value.kReverse);
-        //}
+        if (latchSolenoid.get() != Value.kForward && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
+          latchSolenoid.set(DoubleSolenoid.Value.kForward);
+
+        }
+
         SmartDashboard.putBoolean("Latch Ready", true);
         rumble_index = 0;
     }
