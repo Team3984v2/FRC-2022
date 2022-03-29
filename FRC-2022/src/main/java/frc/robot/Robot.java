@@ -105,10 +105,11 @@ public class Robot extends TimedRobot {
   private double error = heading - gyro.getAngle();
 
 
-  private DigitalInput toplimitSwitch = new DigitalInput(0);
+  private DigitalInput bottomlimitSwitch = new DigitalInput(0);
   private DigitalOutput red = new DigitalOutput(1);
   private DigitalOutput blue = new DigitalOutput(2);
   private DigitalOutput green = new DigitalOutput(3);
+  private DigitalInput toplimitSwitch = new DigitalInput(4);
   
   private final Timer m_timer = new Timer();
   /**
@@ -132,6 +133,8 @@ public class Robot extends TimedRobot {
     SmartDashboard.putData("Auto choices", m_chooser);
 
     SmartDashboard.putNumber("speed", .75);
+    SmartDashboard.putNumber("low_shooter_speed",.33);
+    SmartDashboard.putBoolean("overideWinchLimit", false);
 
     //Setting up motors. Main thing: inverts neccessary motors.
     functions.setInitTalons(m_leftFrontMotor, m_rightFrontMotor, m_leftRearMotor, m_rightRearMotor);
@@ -192,6 +195,7 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("red:", false);
     SmartDashboard.putBoolean("blue:", false);
     SmartDashboard.putBoolean("green:", false);
+
     if (DriverStation.getAlliance() == Alliance.Red){
       red.set(true);
       initred = true;
@@ -216,7 +220,7 @@ public class Robot extends TimedRobot {
         // set speed to 33% and shoot into low goal
         // move back and try to grab another ball.
         m_secondaryIntake.set(1);
-        m_shootMotor.set(0.33);
+        m_shootMotor.set(0.5);
         // robot shoots the preloaded ball into the low goal as it will start up against the goal
         //No encoder so I got the rpm of the motor and used a timer
         if (m_timer.get() < 0.12){
@@ -253,32 +257,34 @@ public class Robot extends TimedRobot {
         m_shootMotor.set(0.33);
       }
       */
-
-      m_secondaryIntake.set(1);
-        m_shootMotor.set(0.33);
+        if (m_timer.get() < 1){
+          drivetrain.set(0.5);
+        }
+      //m_secondaryIntake.set(1);
+        //m_shootMotor.set(0.33);
         // robot shoots the preloaded ball into the low goal as it will start up against the goal
         //No encoder so I got the rpm of the motor and used a timer
-        if (m_timer.get() < 0.12){
-          drivetrain.set(-0.5);
-          // robot moving backwards
-        }
-        if (m_timer.get() > 0.13 && m_timer.get() < 0.20){
-          rightGroup.set(0.5);
-          // robot turning torwards ball
-        }
-        if (m_timer.get() > 0.21 && m_timer.get() < 0.24){
-          // robot intakes the ball
-          drivetrain.set(0.75);
-        }
-        if (m_timer.get() > 0.24 && m_timer.get() < 0.31){
-          // ribot turns torwards the goal
-          leftGroup.set(0.5);
-        }
-        if (m_timer.get() > 0.31){
-          // shooting at a distance of about 153 inches
-          m_secondaryIntake.set(1);
-          m_shootMotor.set(0.66); // about 87 % of the power if it was at 175 inches away. 
-        }
+        // if (m_timer.get() < 1){
+        //   drivetrain.set(-0.5);
+        //   // robot moving backwards
+        // }
+        // if (m_timer.get() > 0.13 && m_timer.get() < 0.20){
+        //   rightGroup.set(0.5);
+        //   // robot turning torwards ball
+        // }
+        // if (m_timer.get() > 0.21 && m_timer.get() < 0.24){
+        //   // robot intakes the ball
+        //   drivetrain.set(0.75);
+        // }
+        // if (m_timer.get() > 0.24 && m_timer.get() < 0.31){
+        //   // ribot turns torwards the goal
+        //   leftGroup.set(0.5);
+        // }
+        // if (m_timer.get() > 0.31){
+        //   // shooting at a distance of about 153 inches
+        //   m_secondaryIntake.set(1);
+        //   m_shootMotor.set(0.66); // about 87 % of the power if it was at 175 inches away. 
+        // }
       
         // Put default auto code here
         break;
@@ -287,7 +293,22 @@ public class Robot extends TimedRobot {
 
   /** This function is called once when teleop is enabled. */
   @Override
-  public void teleopInit() {}
+  public void teleopInit() {
+
+    SmartDashboard.putBoolean("red:", false);
+    SmartDashboard.putBoolean("blue:", false);
+    SmartDashboard.putBoolean("green:", false);
+    if (DriverStation.getAlliance() == Alliance.Red){
+      red.set(true);
+      initred = true;
+      SmartDashboard.putBoolean("red:", initred);
+    }else{
+      blue.set(true);
+      initblue = true;
+      SmartDashboard.putBoolean("blue:", initblue);
+    }
+
+  }
 
   /** This function is called periodically during operator control. */
   @Override
@@ -302,11 +323,16 @@ public class Robot extends TimedRobot {
       rightSolenoid.set(Value.kForward);
       //leftSolenoid.set(Value.kForward);
     }
+
     if (m_driverController.getPOV() == 270){
       // arm goes down if left bumper is pressed.
       rightSolenoid.set(Value.kReverse);
       //leftSolenoid.set(Value.kReverse);
     }
+
+
+
+
 
     //Latch Solenoid
     if (m_driverController.getBackButton()){
@@ -319,12 +345,30 @@ public class Robot extends TimedRobot {
     }
 
     //Winch Motor
-    if (m_driverController.getPOV() == 0){
-      m_winch.set(1);
-    }else if (m_driverController.getPOV() == 180){
-      m_winch.set(-1);
-    }else{
-      m_winch.stopMotor();
+    if (toplimitSwitch.get() == false/*true => false*/ || SmartDashboard.getBoolean("overideWinchLimit", false)){
+      if (m_driverController.getPOV() == 180){
+        m_winch.set(-1);
+      }
+      else{
+        m_winch.stopMotor();
+      }
+    }
+    else if (bottomlimitSwitch.get() == false || SmartDashboard.getBoolean("overideWinchLimit", false)){
+      if (m_driverController.getPOV() == 0){
+        m_winch.set(1);
+      }else{
+        m_winch.stopMotor();
+      }
+    }
+    else{
+      if (m_driverController.getPOV() == 180){
+        m_winch.set(-1);
+      }else if (m_driverController.getPOV() == 0){
+        m_winch.set(1);
+      }else{
+        m_winch.stopMotor();
+      }
+     
     }
 
 
@@ -351,10 +395,10 @@ public class Robot extends TimedRobot {
       m_secondaryIntake.set(0);
     }
     if (m_driverController.getRightTriggerAxis() != 0 && m_driverController.getLeftTriggerAxis() == 0){
-      m_shootMotor.set((m_driverController.getRightTriggerAxis())*0.33);
+      m_shootMotor.set((m_driverController.getRightTriggerAxis())*(SmartDashboard.getNumber("low_shooter_speed",.33)));
     }
     if (m_driverController.getLeftTriggerAxis() != 0 && m_driverController.getRightTriggerAxis() == 0){
-      m_shootMotor.set((m_driverController.getLeftTriggerAxis())*(SmartDashboard.getNumber("speed",.1)));
+      m_shootMotor.set((m_driverController.getLeftTriggerAxis())*(SmartDashboard.getNumber("speed",.75)));
     }
     if (m_driverController.getLeftTriggerAxis() != 0 && m_driverController.getRightTriggerAxis() != 0){
       m_shootMotor.set(-((m_driverController.getLeftTriggerAxis()+m_driverController.getRightTriggerAxis())/2)*0.25);
@@ -364,7 +408,7 @@ public class Robot extends TimedRobot {
 
 
 
-    if (toplimitSwitch.get()) {
+    if (bottomlimitSwitch.get()) {
         // We are going up and top limit is tripped so stop
         SmartDashboard.putBoolean("Latch Ready", false);
         /*
@@ -380,10 +424,10 @@ public class Robot extends TimedRobot {
           }*/
     } else {
         // We are going up but top limit is not tripped so go at commanded speed
-        if (latchSolenoid.get() != Value.kForward && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
-          latchSolenoid.set(DoubleSolenoid.Value.kForward);
+        //if (latchSolenoid.get() != Value.kForward && m_driverController.getBackButton() != true || m_driverController.getStartButton() != true){
+        //  latchSolenoid.set(DoubleSolenoid.Value.kForward);
 
-        }
+        //}
 
         SmartDashboard.putBoolean("Latch Ready", true);
         rumble_index = 0;
